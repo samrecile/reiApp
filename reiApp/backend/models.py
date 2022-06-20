@@ -34,11 +34,8 @@ class Property(models.Model):
 
 # COMPONENT VALUES (values below are used to caluclate the above expressions)
     # returns iterable of property values for duration of 30-years
-    def get_property_values(self, growth_rate=.02, value=0):
-        if value != 0:
-            value = value
-        else:
-            value = self.asking
+    def get_property_values(self, growth_rate=.02):
+        value = self.asking
         property_values = []
         if self.Neighborhood.proj_price_appreciation:
             growth_rate = self.Neighborhood.proj_price_appreciation
