@@ -1,7 +1,6 @@
 from django.contrib import admin
-from .models import Property, Neighborhood, Zipcode
+from .models import Property, Area
 # Register your models here.
 
 admin.site.register(Property)
-admin.site.register(Neighborhood)
-admin.site.register(Zipcode)
+admin.site.register(Area)

@@ -26,7 +26,7 @@ def get_property_values(growth_rate=.02, value=0):
     for x in range(30):
         property_values.append(value)
         value *= (1+growth_rate)
-    return property_values
+    return property_values 
     
     # returns iterable of rents for the duration of 30-years
 def get_gross_rent(growth_rate=.02, rent=0):
@@ -38,7 +38,7 @@ def get_egi(gross_rent, vacancy=.07):
     pass
     
     # returns iterable of each future year's operating expenses for the duration of 30-years
-def get_opex(taxRate=0, insurance=0, management=0, maintenance=0, capex=0, misc=0):
+def get_opex(taxRate=.016, insurance=0, management=0, maintenance=0, capex=0, misc=0):
     opex = []
     gross_rents = []
 
