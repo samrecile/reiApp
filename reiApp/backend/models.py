@@ -13,7 +13,9 @@ class Property(models.Model):
     baths = models.IntegerField(blank=True, null=True)
     asking = models.IntegerField()
     date = models.DateField(auto_now_add=True)
-    user = models.BooleanField(blank=True, null=True, default=False)
+    cap_rate =  models.FloatField(blank=True, null=True)
+    cash_on_cash = models.FloatField(blank=True, null=True)
+
 #ADVANCED METRICS
     # calculates npv of property
     def calculate_npv(self, interest_rate=.05, rent_growth=.02):
@@ -21,15 +23,19 @@ class Property(models.Model):
 
     # calculates cap rate
     def calculate_caprate(self, value=0):
-        noi = (self.duration_noi)[0]
+        noi = (self.duration_noi())[0]
         if value == 0:
             value = self.asking
-        capRate = noi/value
+        capRate = (noi*12)/value
+        #cap_rate = Decimal("%.4f" % capRate)
         return capRate
 
     # calculates cash-on-cash return
     def calculate_cashoncash(self):
-        cash_on_cash = 0
+        before_tax_cf = (self.egi()[0]*12) - (self.bt_opex()[0])
+        cashInvestment = (self.asking*.2)
+        cash_on_cash = before_tax_cf/cashInvestment
+        return cash_on_cash
 
     # returns an estimate of the property given the location, size, bedrooms, etc.
     def get_estimate():
@@ -48,44 +54,43 @@ class Property(models.Model):
     
     # returns iterable of monthly gross rents for the duration of 30-years
     def gross_rent(self):
-        property_values = future_values
-        rent_sf = self.area.price_sf
+        property_value = self.future_values()[0]
+        rent_sf = self.area.rent_sf
         rent_ratio = self.area.rent_over_value
         rent_appreciation = self.area.proj_rent_appreciation
         gross_rents = []
-        rent = 0
-        for value in property_values:
-            rent = ((value*rent_ratio)+(self.sqf*rent_sf))
+        rent = ((property_value*rent_ratio)+(self.sqf*rent_sf))/2
+        for x in range(30):
             gross_rents.append(rent)
-            rent*=(1+rent_appreciation)
+            rent*=rent_appreciation
         return gross_rents
 
     # returns iterable of monthyl effective gross income for the 30-years (gross-vacancy)
     def egi(self):
-        egi = [grossValue*self.area.occupancy for grossValue in self.gross_rent]
+        egi = [float(grossValue*self.area.occupancy) for grossValue in self.gross_rent()]
         return egi
     
     # returns iterable of each future year's monthly operating expenses without taxes for the duration of 30-years
     def bt_opex(self, insurance=.1, management=.1, maintenance=.075, capex=.10, misc=.05):
-        gross_rents = self.gross_rent
+        gross_rents = self.gross_rent()
         bt_opex = []
         for rent in gross_rents:
-            expense = rent*insurance
-            expense += (rent*management)
-            expense += (rent*maintenance)
-            expense += (rent*capex)
-            expense += (rent*misc)
+            expense = float(rent)*insurance
+            expense += (float(rent)*management)
+            expense += (float(rent)*maintenance)
+            expense += (float(rent)*capex)
+            expense += (float(rent)*misc)
             bt_opex.append(expense)
         return bt_opex
 
     # returns iterable of each future year's operating expenses with taxes for the duration of 30-years
     def at_opex(self, taxRate=.016):
-        bt_opex = self.bt_opex
-        gross_rents = self.gross_rent
+        bt_opex = self.bt_opex()
+        gross_rents = self.gross_rent()
         expense = 0
         at_opex = []
         for x in range(len(gross_rents)):
-            taxes = (gross_rents[x] * taxRate)
+            taxes = (float(gross_rents[x]) * taxRate)
             opex = bt_opex[x] + taxes
             at_opex.append(opex)
         return at_opex
@@ -93,10 +98,23 @@ class Property(models.Model):
 
     # returns iterable of each future year's net operating income for the duration of 30-years
     def duration_noi(self):
-        noi=0
+        egi = self.egi()
+        at_opex = self.at_opex()
+        noi = []
+        for x in range(len(egi)):
+            noi_value = egi[x]-at_opex[x]
+            noi.append(noi_value)
+        return noi
 
+    # returns iterable of each future year's operating cash flow (after debt service) for the duration of 30-years
     def operating_cf(self):
-        pass
+        noi = self.duration_noi()
+        monthly_debt_service = self.calculate_mortgage_payment()
+        operating_cf = []
+        for noi_value in noi:
+            op_cf_value = noi_value - monthly_debt_service
+            operating_cf.append(op_cf_value)
+        return operating_cf
     
 #MORTGAGE CALCULATIONS
     # calculates mortgage payment of property
@@ -116,6 +134,16 @@ class Property(models.Model):
     def __str__(self):
         return self.address
 
+    def save(self):
+        super(Property,self).save()
+        if not self.cap_rate:
+            self.cap_rate = self.calculate_caprate()
+            self.save()
+        if not self.cash_on_cash:
+            self.cash_on_cash = self.calculate_cashoncash()
+            self.save()
+
+
 class Area(models.Model):
     name = models.CharField(max_length=50, primary_key=True)
     city = models.CharField(max_length=50)
@@ -123,6 +151,7 @@ class Area(models.Model):
     price_sf = models.DecimalField(max_digits=10, decimal_places=2)
     rent_sf = models.DecimalField(max_digits=8, decimal_places=2)
     rent_over_value = models.DecimalField(max_digits=4, decimal_places=2)
+    #rent_per_bed = models.DecimalField(max_digits=4, decimal_places=2)
     proj_price_appreciation = models.DecimalField(max_digits=8, decimal_places=4)
     proj_rent_appreciation = models.DecimalField(max_digits=8, decimal_places=4)
     proj_airb_appreciation = models.DecimalField(max_digits=8, decimal_places=4)
