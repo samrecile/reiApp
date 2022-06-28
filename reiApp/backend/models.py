@@ -1,4 +1,6 @@
 from django.db import models
+from django.contrib.auth.models import User
+import numpy as np
 
 # Create your models here.
 class Property(models.Model):
@@ -18,8 +20,11 @@ class Property(models.Model):
 
 #ADVANCED METRICS
     # calculates npv of property
-    def calculate_npv(self, interest_rate=.05, rent_growth=.02):
-        npv = 0
+    def calculate_npv(self, interest_rate=.05, rent_growth=.02, duration=30):
+        cash_flows = []
+        ocf = self.duration_noi()
+        npv = np.npv(interst_rate, cash_flows)
+        return npv
 
     # calculates cap rate
     def calculate_caprate(self, value=0):
@@ -27,7 +32,6 @@ class Property(models.Model):
         if value == 0:
             value = self.asking
         capRate = (noi*12)/value
-        #cap_rate = Decimal("%.4f" % capRate)
         return capRate
 
     # calculates cash-on-cash return
@@ -52,7 +56,7 @@ class Property(models.Model):
             value *= (1+growth_rate)
         return property_values
     
-    # returns iterable of monthly gross rents for the duration of 30-years
+    # returns iterable of MONTHLY gross rents for the duration of 30-years
     def gross_rent(self):
         property_value = self.future_values()[0]
         rent_sf = self.area.rent_sf
@@ -65,12 +69,12 @@ class Property(models.Model):
             rent*=rent_appreciation
         return gross_rents
 
-    # returns iterable of monthyl effective gross income for the 30-years (gross-vacancy)
+    # returns iterable of MOTHLY effective gross income for the 30-years (gross-vacancy)
     def egi(self):
         egi = [float(grossValue*self.area.occupancy) for grossValue in self.gross_rent()]
         return egi
     
-    # returns iterable of each future year's monthly operating expenses without taxes for the duration of 30-years
+    # returns iterable of each future year's MONTHLY operating expenses without taxes for the duration of 30-years
     def bt_opex(self, insurance=.1, management=.1, maintenance=.075, capex=.10, misc=.05):
         gross_rents = self.gross_rent()
         bt_opex = []
@@ -83,7 +87,7 @@ class Property(models.Model):
             bt_opex.append(expense)
         return bt_opex
 
-    # returns iterable of each future year's operating expenses with taxes for the duration of 30-years
+    # returns iterable of each future year's MONTHLY operating expenses with taxes for the duration of 30-years
     def at_opex(self, taxRate=.016):
         bt_opex = self.bt_opex()
         gross_rents = self.gross_rent()
@@ -96,7 +100,7 @@ class Property(models.Model):
         return at_opex
 
 
-    # returns iterable of each future year's net operating income for the duration of 30-years
+    # returns iterable of each future year's MONTHLY net operating income for the duration of 30-years
     def duration_noi(self):
         egi = self.egi()
         at_opex = self.at_opex()
@@ -106,7 +110,7 @@ class Property(models.Model):
             noi.append(noi_value)
         return noi
 
-    # returns iterable of each future year's operating cash flow (after debt service) for the duration of 30-years
+    # returns iterable of each future year's MONTHLY operating cash flow (after debt service) for the duration of 30-years
     def operating_cf(self):
         noi = self.duration_noi()
         monthly_debt_service = self.calculate_mortgage_payment()
@@ -134,7 +138,7 @@ class Property(models.Model):
     def __str__(self):
         return self.address
 
-    def save(self):
+    def save(self, *args, **kwargs):
         super(Property,self).save()
         if not self.cap_rate:
             self.cap_rate = self.calculate_caprate()
@@ -148,14 +152,19 @@ class Area(models.Model):
     name = models.CharField(max_length=50, primary_key=True)
     city = models.CharField(max_length=50)
     state = models.CharField(max_length=50)
-    price_sf = models.DecimalField(max_digits=10, decimal_places=2)
-    rent_sf = models.DecimalField(max_digits=8, decimal_places=2)
-    rent_over_value = models.DecimalField(max_digits=4, decimal_places=2)
+    price_sf = models.DecimalField(max_digits=6, decimal_places=2)
+    rent_sf = models.DecimalField(max_digits=5, decimal_places=2)
+    rent_over_value = models.DecimalField(max_digits=4, decimal_places=3)
     #rent_per_bed = models.DecimalField(max_digits=4, decimal_places=2)
-    proj_price_appreciation = models.DecimalField(max_digits=8, decimal_places=4)
-    proj_rent_appreciation = models.DecimalField(max_digits=8, decimal_places=4)
-    proj_airb_appreciation = models.DecimalField(max_digits=8, decimal_places=4)
-    occupancy = models.DecimalField(max_digits=8, decimal_places=4)
-    tax_rate = models.DecimalField(max_digits=8, decimal_places=4, blank=True, null=True)
+    proj_price_appreciation = models.DecimalField(max_digits=4, decimal_places=2)
+    proj_rent_appreciation = models.DecimalField(max_digits=4, decimal_places=2)
+    proj_airb_appreciation = models.DecimalField(max_digits=4, decimal_places=2)
+    occupancy = models.DecimalField(max_digits=4, decimal_places=2)
+    tax_rate = models.DecimalField(max_digits=4, decimal_places=2, blank=True, null=True)
     def __str__(self):
         return self.name
+
+class Profile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE,)
+    areas = models.ManyToManyField(Area)
+    
