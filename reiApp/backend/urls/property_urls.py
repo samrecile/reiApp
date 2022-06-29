@@ -1,5 +1,6 @@
 from django.urls import path
-from . import views
+
+from backend.views import property_views as views
 
 urlpatterns = [
     path('caprate/', views.caprate_list.as_view(), name="caprate"),
