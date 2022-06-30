@@ -5,6 +5,10 @@ from backend.views import property_views as views
 urlpatterns = [
     path('caprate/', views.caprate_list.as_view(), name="caprate"),
     path('caprate/<str:area>/', views.caprate_list.as_view(), name="caprate"),
+    path('caprate/<str:area>/<str:city>/', views.caprate_list.as_view(), name="caprate"),
+    path('caprate/<str:city>/', views.caprate_list.as_view(), name="caprate"),
     path('cashoncash/', views.cashoncash_list.as_view(), name="cashoncash"),
     path('cashoncash/<str:area>/', views.cashoncash_list.as_view(), name="cashoncash"),
+    path('cashoncash/<str:area>/<str:city>/', views.cashoncash_list.as_view(), name="cashoncash"),
+    path('cashoncash/<str:city>/', views.cashoncash_list.as_view(), name="cashoncash"),
 ]

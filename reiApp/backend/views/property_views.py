@@ -16,7 +16,7 @@ class caprate_list(APIView):
 
     def get(self, request, area=None, city=None):
         if area and city:
-            properties = Property.objects.filter(city=city).order_by('-cap_rate')
+            properties = Property.objects.filter(city=city).filter(area=area).order_by('-cap_rate')
             serializer = PropertySerializer(properties, many=True)
             return Response(serializer.data)
         elif city:
@@ -37,7 +37,7 @@ class cashoncash_list(APIView):
 
     def get(self, request, area=None, city=None):
         if area and city:
-            properties = Property.objects.filter(city=city).order_by('-cash_on_cash')
+            properties = Property.objects.filter(city=city).filter(area=area).order_by('-cash_on_cash')
             serializer = PropertySerializer(properties, many=True)
             return Response(serializer.data)
         elif city:
@@ -58,7 +58,7 @@ class price_list(APIView):
 
     def get(self, request, area=None, city=None):
         if area and city:
-            properties = Property.objects.filter(city=city).order_by('-price')
+            properties = Property.objects.filter(city=city).filter(area=area).order_by('-price')
             serializer = PropertySerializer(properties, many=True)
             return Response(serializer.data)
         elif city:
