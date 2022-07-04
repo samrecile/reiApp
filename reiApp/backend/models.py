@@ -167,4 +167,5 @@ class Area(models.Model):
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE,)
     areas = models.ManyToManyField(Area)
-    
+
+

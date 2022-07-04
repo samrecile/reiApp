@@ -7,6 +7,8 @@ const Filter = ( props ) => {
         <Card.Body>
             <p>City</p>
             <p>Neighborhoods</p>
+            <p>Price</p>
+            
             <form>
                 <input></input>
             </form>
