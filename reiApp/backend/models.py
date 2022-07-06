@@ -1,8 +1,7 @@
 from django.db import models
-from django.contrib.auth.models import User
 import numpy as np
 
-# Create your models here.
+# ANALYSIS MODELS
 class Property(models.Model):
     address = models.CharField(max_length=50)
     city = models.CharField(max_length=50)
@@ -164,8 +163,9 @@ class Area(models.Model):
     def __str__(self):
         return self.name
 
-class Profile(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE,)
-    areas = models.ManyToManyField(Area)
 
+# USER/AUTH MODELS
+#class Profile(models.Model):
+ #   user = models.OneToOneField(User, on_delete=models.CASCADE,)
+  #  areas = models.ManyToManyField(Area)
 

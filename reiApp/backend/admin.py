@@ -4,3 +4,4 @@ from .models import Property, Area
 
 admin.site.register(Property)
 admin.site.register(Area)
+

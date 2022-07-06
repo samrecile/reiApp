@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'backend.apps.BackendConfig',
+    'users.apps.UsersConfig',
     'rest_framework',
     'corsheaders',
 ]
@@ -169,3 +170,5 @@ SIMPLE_JWT = {
     'SLIDING_TOKEN_LIFETIME': timedelta(minutes=5),
     'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=1),
 }
+
+AUTH_USER_MODEL = 'users.UserAccount'
